@@ -89,7 +89,7 @@ InertialSenseROS::InertialSenseROS() :
 
     // Set up the IMU ROS stream
     nh_private_.param<bool>("sIMU", IMU_.stream_on, true);
-    nh_private_.param<int>("sIMU1_rate", IMU_.stream_rate, 100);
+    nh_private_.param<int>("sIMU_rate", IMU_.stream_rate, 100);
     if (IMU_.stream_on)
     {
         IMU_.pub = nh_.advertise<sensor_msgs::Imu>("imu1", 1);

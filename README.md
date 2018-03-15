@@ -23,7 +23,7 @@ This is a ROS package, with the InertialSenseSDK as a submodule, so just create 
 mkdir -p catkin_ws/src
 cd catkin_ws/src
 catkin_init_workspace
-git clone https://superjax/inertial_sense
+git clone https://github.com/inertialsense/inertial_sense_ros.git
 cd inertial_sense
 git submodule update --init --recursive
 cd ../..
@@ -49,7 +49,7 @@ For setting parameters and topic remappings from a launch file, refer to the [Ro
 ## Parameters
 * `~port` (string, default: "/dev/ttyUSB0")
     - Serial port to connect to
-* `~baud` (int, default: 3000000)
+* `~baudrate` (int, default: 3000000)
     - baudrate of serial communication 
 * `~frame_id` (string, default "body") 
    - frame id of all measurements 
