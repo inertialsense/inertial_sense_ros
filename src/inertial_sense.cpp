@@ -80,7 +80,10 @@ InertialSenseROS::InertialSenseROS() :
 
   // Set up the GPS ROS stream - we always need GPS information for time sync, just don't always need to publish it
   nh_private_.param<int>("GPS_rate", GPS_.stream_rate, 0);
-  GPS_.pub = nh_.advertise<inertial_sense::GPS>("gps", 1);
+  if (GPS_.stream_rate > 0)
+  {
+    GPS_.pub = nh_.advertise<inertial_sense::GPS>("gps", 1);
+  }
   request_data(DID_GPS_NAV, GPS_.stream_rate);
 
   // Set up the GPS info ROS stream
