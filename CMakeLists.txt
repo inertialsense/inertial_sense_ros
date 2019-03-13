@@ -47,10 +47,10 @@ catkin_package(
 
 include_directories(include
   ${catkin_INCLUDE_DIRS}
-  lib/InertialSenseSDK/src
+  ../../../cpp/SDK/src #Reference current version of SDK instead of git submodule
 )
 
-add_subdirectory(lib/InertialSenseSDK)
+add_subdirectory(../../../cpp/SDK lib/InertialSenseSDK) #Reference current version of SDK instead of git submodule
 
 add_executable(inertial_sense_node
         src/inertial_sense.cpp
