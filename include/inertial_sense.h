@@ -29,6 +29,7 @@
 #include "std_msgs/Header.h"
 #include "geometry_msgs/Vector3Stamped.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
+//#include "geometry/xform.h"
 
 # define GPS_UNIX_OFFSET 315964800 // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
 # define LEAP_SECONDS 18 // GPS time does not have leap seconds, UNIX does (as of 1/1/2017 - next one is probably in 2020 sometime unless there is some crazy earthquake or nuclear blast)
@@ -116,6 +117,7 @@ private:
   void strobe_in_time_callback(const strobe_in_time_t * const msg);
 
   ros::Subscriber wheel_enc_sub_;
+  ros::Subscriber armadillo_pose_sub_;
   ros::ServiceServer mag_cal_srv_;
   ros::ServiceServer multi_mag_cal_srv_;
   ros::ServiceServer firmware_update_srv_;
@@ -127,6 +129,7 @@ private:
   bool perform_multi_mag_cal_srv_callback(std_srvs::Trigger::Request & req, std_srvs::Trigger::Response & res);
   bool update_firmware_srv_callback(inertial_sense::FirmwareUpdate::Request & req, inertial_sense::FirmwareUpdate::Response & res);
   void wheel_enc_callback(const sensor_msgs::JointStateConstPtr& msg);
+  void armadillo_pose_callback(const geometry_msgs::PoseWithCovarianceStamped &msg);
   void configure_wheel_encoders();
   
   void publishGPS();
