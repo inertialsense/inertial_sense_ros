@@ -26,6 +26,7 @@ add_message_files(
   GlonassEphemeris.msg
   GNSSEphemeris.msg
   GNSSObservation.msg
+  GNSSObsVec.msg
 )
 
 add_service_files(

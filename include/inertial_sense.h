@@ -24,6 +24,7 @@
 #include "inertial_sense/GNSSEphemeris.h"
 #include "inertial_sense/GlonassEphemeris.h"
 #include "inertial_sense/GNSSObservation.h"
+#include "inertial_sense/GNSSObsVec.h"
 #include "nav_msgs/Odometry.h"
 #include "std_srvs/Trigger.h"
 #include "std_msgs/Header.h"
@@ -97,9 +98,13 @@ private:
   void GPS_pos_callback(const gps_pos_t* const msg);
   void GPS_vel_callback(const gps_vel_t* const msg);
   void GPS_raw_callback(const gps_raw_t* const msg);
-  void GPS_obs_callback(const obsd_t* const msg);
+  void GPS_obs_callback(const obsd_t * const msg, int nObs);
   void GPS_eph_callback(const eph_t* const msg);
   void GPS_geph_callback(const geph_t* const msg);
+  void GPS_obs_bundle_timer_callback(const ros::TimerEvent& e);
+  inertial_sense::GNSSObsVec obs_Vec_;
+  ros::Timer obs_bundle_timer_;
+  ros::Time last_obs_time_;
 
   ros_stream_t GPS_info_;
   void GPS_info_callback(const gps_sat_t* const msg);
@@ -131,6 +136,7 @@ private:
   void wheel_enc_callback(const sensor_msgs::JointStateConstPtr& msg);
   void armadillo_pose_callback(const geometry_msgs::PoseWithCovarianceStamped &msg);
   void configure_wheel_encoders();
+//  void configure_wheel();
   
   void publishGPS();
 
@@ -172,6 +178,7 @@ private:
   ros::Time ros_time_from_tow(const double tow);
 
   double tow_from_ros_time(const ros::Time& rt);
+  ros::Time ros_time_from_gtime(const uint64_t sec, double subsec);
 
   double GPS_towOffset_ = 0; // The offset between GPS time-of-week and local time on the uINS
                              //  If this number is 0, then we have not yet got a fix

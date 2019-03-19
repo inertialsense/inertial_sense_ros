@@ -1,5 +1,5 @@
 std_msgs/Header header
-GTime time              # time of observation
+GTime time      # time of observation (UTC Time w/o Leap Seconds)
 uint8 sat 		# satellite number
 uint8 rcv 		# receiver number
 uint8 SNR 		# Signal Strength (0.25 dBHz)

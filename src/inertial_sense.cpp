@@ -45,6 +45,7 @@ InertialSenseROS::InertialSenseROS() :
   configure_ascii_output();
   configure_rtk();
 
+  
   initialized_ = true;
 }
 
@@ -83,12 +84,13 @@ void InertialSenseROS::configure_data_streams()
   nh_private_.param<bool>("stream_GPS_raw", GPS_eph_.enabled, false);
   if (GPS_obs_.enabled)
   {
-    GPS_obs_.pub = nh_.advertise<inertial_sense::GNSSObservation>("gps/obs", 50);
+    GPS_obs_.pub = nh_.advertise<inertial_sense::GNSSObsVec>("gps/obs", 50);
     GPS_eph_.pub = nh_.advertise<inertial_sense::GNSSEphemeris>("gps/eph", 50);
     GPS_eph_.pub2 = nh_.advertise<inertial_sense::GlonassEphemeris>("gps/geph", 50);
     SET_CALLBACK(DID_GPS1_RAW, gps_raw_t, GPS_raw_callback);
     SET_CALLBACK(DID_GPS_BASE_RAW, gps_raw_t, GPS_raw_callback);
     SET_CALLBACK(DID_GPS2_RAW, gps_raw_t, GPS_raw_callback);
+    obs_bundle_timer_ = nh_.createTimer(ros::Duration(0.001), InertialSenseROS::GPS_obs_bundle_timer_callback, this);
   }
 
   // Set up the GPS info ROS stream
@@ -199,7 +201,6 @@ void InertialSenseROS::configure_parameters()
   set_flash_config<int>("dynamic_model", offsetof(nvm_flash_cfg_t, insDynModel), 8);
   set_flash_config<int>("ser1_baud_rate", offsetof(nvm_flash_cfg_t, ser1BaudRate), 921600);
 }
-
 
 void InertialSenseROS::configure_rtk()
 {
@@ -549,8 +550,7 @@ void InertialSenseROS::GPS_raw_callback(const gps_raw_t * const msg)
   switch(msg->dataType)
   {
   case raw_data_type_observation:
-    for (int i = 0; i < msg->obsCount; i++)
-      GPS_obs_callback((obsd_t*)&msg->data.obs[i]);
+    GPS_obs_callback((obsd_t*)&msg->data.obs, msg->obsCount);
     break;
 
   case raw_data_type_ephemeris:
@@ -566,23 +566,49 @@ void InertialSenseROS::GPS_raw_callback(const gps_raw_t * const msg)
   }
 }
 
-void InertialSenseROS::GPS_obs_callback(const obsd_t * const msg)
+void InertialSenseROS::GPS_obs_callback(const obsd_t * const msg, int nObs)
 {
-  inertial_sense::GNSSObservation obs;
-  obs.time.time = msg->time.time;
-  obs.time.sec = msg->time.sec;
-  obs.sat = msg->sat;
-  obs.rcv = msg->rcv;
-  obs.SNR = msg->SNR[0];
-  obs.LLI = msg->LLI[0];
-  obs.code = msg->code[0];
-  obs.qualL = msg->qualL[0];
-  obs.qualP = msg->qualP[0];
-  obs.L = msg->L[0];
-  obs.P = msg->P[0];
-  obs.D = msg->D[0];
-  GPS_obs_.pub.publish(obs);
+  if (obs_Vec_.obs.size() > 0 &&
+       (msg[0].time.time != obs_Vec_.obs[0].time.time ||
+        msg[0].time.sec != obs_Vec_.obs[0].time.sec))
+      GPS_obs_bundle_timer_callback(ros::TimerEvent());
+
+  for (int i = 0; i < nObs; i++)
+  {
+      inertial_sense::GNSSObservation obs;
+      obs.header.stamp = ros_time_from_gtime(obs_Vec_.obs[0].time.time, obs_Vec_.obs[0].time.sec);
+      obs.time.time = msg[i].time.time;
+      obs.time.sec = msg[i].time.sec;
+      obs.sat = msg[i].sat;
+      obs.rcv = msg[i].rcv;
+      obs.SNR = msg[i].SNR[0];
+      obs.LLI = msg[i].LLI[0];
+      obs.code = msg[i].code[0];
+      obs.qualL = msg[i].qualL[0];
+      obs.qualP = msg[i].qualP[0];
+      obs.L = msg[i].L[0];
+      obs.P = msg[i].P[0];
+      obs.D = msg[i].D[0];
+      obs_Vec_.obs.push_back(obs);
+      last_obs_time_ = ros::Time::now();
+  }
 }
+
+void InertialSenseROS::GPS_obs_bundle_timer_callback(const ros::TimerEvent &e)
+{
+    if (obs_Vec_.obs.size() == 0)
+        return;
+
+    if ((ros::Time::now() - last_obs_time_).toSec() > 1e-2)
+    {
+        obs_Vec_.header.stamp = ros_time_from_gtime(obs_Vec_.obs[0].time.time, obs_Vec_.obs[0].time.sec);
+        obs_Vec_.time = obs_Vec_.obs[0].time;
+        GPS_obs_.pub.publish(obs_Vec_);
+        obs_Vec_.obs.clear();
+        cout << "dt" << (obs_Vec_.header.stamp - ros::Time::now()) << endl;
+    }
+}
+
 
 void InertialSenseROS::GPS_eph_callback(const eph_t * const msg)
 {
@@ -741,14 +767,6 @@ void InertialSenseROS::wheel_enc_callback(const sensor_msgs::JointStateConstPtr 
   wheel_enc_msg.theta_r = msg->position[1];
   wheel_enc_msg.omega_l = msg->velocity[0];
   wheel_enc_msg.omega_r = msg->velocity[1];
-#if 0
-  ROS_INFO("WHEEL: %14.4f %8.3f %8.3f %8.1f %8.1f", 
-    wheel_enc_msg.timeOfWeekMs,
-    wheel_enc_msg.theta_l,
-    wheel_enc_msg.theta_r,
-    wheel_enc_msg.omega_l,
-    wheel_enc_msg.omega_r);
-#endif
   IS_.SendData(DID_WHEEL_ENCODER, reinterpret_cast<uint8_t*>(&wheel_enc_msg), sizeof(wheel_encoder_t), 0);
 }
 
@@ -830,6 +848,14 @@ ros::Time InertialSenseROS::ros_time_from_tow(const double tow)
 double InertialSenseROS::tow_from_ros_time(const ros::Time &rt)
 {
   return (rt.sec - UNIX_TO_GPS_OFFSET - GPS_week_*604800) + rt.nsec*1.0e-9;
+}
+
+ros::Time InertialSenseROS::ros_time_from_gtime(const uint64_t sec, double subsec)
+{
+    ros::Time out;
+    out.sec = sec - LEAP_SECONDS;
+    out.nsec = subsec * 1e9;
+    return out;
 }
 
 
