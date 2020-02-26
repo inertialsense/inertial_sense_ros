@@ -17,7 +17,7 @@ This ROS package, uses the InertialSenseSDK as a submodule. Clone this package i
 mkdir -p catkin_ws/src
 cd catkin_ws/src
 catkin_init_workspace
-git clone https://inertialsense/inertial_sense_ros
+git clone https://github.com/inertialsense/inertial_sense_ros
 cd inertial_sense
 git submodule update --init --recursive
 cd ../..
