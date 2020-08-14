@@ -65,3 +65,7 @@ add_dependencies(inertial_sense_ros inertial_sense_generate_messages_cpp)
 
 add_executable(inertial_sense_node src/inertial_sense_node.cpp)
 target_link_libraries(inertial_sense_node inertial_sense_ros ${catkin_LIBRARIES})
+
+# RT_INERTIAL_SENSE_NODE
+add_executable(rt_inertial_sense_node src/rt_inertial_sense_node.cpp)
+target_link_libraries(rt_inertial_sense_node inertial_sense_ros ${catkin_LIBRARIES})

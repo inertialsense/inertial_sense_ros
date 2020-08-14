@@ -33,6 +33,8 @@
 #include "diagnostic_msgs/DiagnosticArray.h"
 #include <tf/transform_broadcaster.h>
 //#include "geometry/xform.h"
+#include "hard_real_time_box.h"
+
 
 # define GPS_UNIX_OFFSET 315964800 // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
 # define LEAP_SECONDS 18 // GPS time does not have leap seconds, UNIX does (as of 1/1/2017 - next one is probably in 2020 sometime unless there is some crazy earthquake or nuclear blast)
@@ -61,8 +63,9 @@ public:
   } NMEA_message_config_t;
       
   InertialSenseROS();
+  ~InertialSenseROS();
+  
   void callback(p_data_t* data);
-  void update();
 
   void connect();
   void set_navigation_dt_ms();
@@ -121,7 +124,7 @@ public:
   void GPS_eph_callback(const eph_t* const msg);
   void GPS_geph_callback(const geph_t* const msg);
   void GPS_obs_bundle_timer_callback(const ros::TimerEvent& e);
-  inertial_sense::GNSSObsVec obs_Vec_;
+
   ros::Timer obs_bundle_timer_;
   ros::Time last_obs_time_;
 
@@ -145,6 +148,7 @@ public:
   ros::Timer diagnostics_timer_;
   float diagnostic_ar_ratio_, diagnostic_differential_age_, diagnostic_heading_base_to_rover_;
 
+  // ---------- ROS SERVICES ----------------------
   ros::ServiceServer mag_cal_srv_;
   ros::ServiceServer multi_mag_cal_srv_;
   ros::ServiceServer firmware_update_srv_;
@@ -156,7 +160,7 @@ public:
   bool perform_multi_mag_cal_srv_callback(std_srvs::Trigger::Request & req, std_srvs::Trigger::Response & res);
   bool update_firmware_srv_callback(inertial_sense::FirmwareUpdate::Request & req, inertial_sense::FirmwareUpdate::Response & res);
 
-  void publishGPS();
+  void publishGPS(inertial_sense::GPS& gpsMsg, geometry_msgs::Vector3Stamped& gps_velEcef);
 
   typedef enum
   {
@@ -208,15 +212,30 @@ public:
   // Data to hold on to in between callbacks
   double lla_[3];
   double ecef_[3];
-  sensor_msgs::Imu imu1_msg, imu2_msg;
-  nav_msgs::Odometry odom_msg;
-  inertial_sense::GPS gps_msg; 
-  geometry_msgs::Vector3Stamped gps_velEcef;
-  inertial_sense::GPSInfo gps_info_msg;
+
+  HardRealTimeDataBox<sensor_msgs::Imu> imu1;
+  HardRealTimeDataBox<inertial_sense::GPS> gps;
+  HardRealTimeDataBox<geometry_msgs::Vector3Stamped> gps_vel;
+  HardRealTimeDataBox<inertial_sense::GNSSEphemeris> eph_data_;
+  HardRealTimeDataBox<inertial_sense::GlonassEphemeris> eph2_data_;
+  HardRealTimeDataBox<nav_msgs::Odometry> odom_data_;
+  HardRealTimeDataBox<geometry_msgs::Point> ins1_data_;
+  HardRealTimeDataBox<inertial_sense::PreIntIMU> preintIMU_data_;
+  HardRealTimeDataBox<inertial_sense::GPSInfo> gps_info_data_;
+  HardRealTimeDataBox<std_msgs::Header> strobe_time_data_;
+  HardRealTimeDataBox<sensor_msgs::MagneticField> mag_data_;
+
+  HardRealTimeDataBox<inertial_sense::GNSSObsVec> obs_Vec_data_;
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
   // Connection to the uINS
   InertialSense IS_;
+
+  void rtUpdate();
+  void nonRTUpdate();
+  inline void update(){nonRTUpdate();}
+
+  pthread_mutex_t IS_mutex_;
 };
