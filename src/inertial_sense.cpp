@@ -326,6 +326,8 @@ void InertialSenseROS::rtUpdate()
 {
   //if (pthread_mutex_trylock(&IS_mutex_) == 0)
   {
+    avaliableGPS_RT=false;
+    avaliablePreintIMU_RT = false;
     IS_.Update();
     //pthread_mutex_unlock(&IS_mutex_);
   }
@@ -475,6 +477,7 @@ void InertialSenseROS::GPS_pos_callback(const gps_pos_t *const msg)
     gps_msg.pDop = msg->pDop;
 
     this->gps.writeFromRT(gps_msg);
+    avaliableGPS_RT = true;
   }
 }
 
@@ -558,6 +561,7 @@ void InertialSenseROS::preint_IMU_callback(const preintegrated_imu_t *const msg)
 
   preintIMU_msg.dt = msg->dt;
   this->preintIMU_data_.writeFromRT(preintIMU_msg);
+  avaliablePreintIMU_RT=true;
 }
 
 // RT-Thread

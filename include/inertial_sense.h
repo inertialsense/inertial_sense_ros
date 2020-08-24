@@ -215,12 +215,16 @@ public:
 
   HardRealTimeDataBox<sensor_msgs::Imu> imu1;
   HardRealTimeDataBox<inertial_sense::GPS> gps;
+  bool avaliableGPS_RT;
+
   HardRealTimeDataBox<geometry_msgs::Vector3Stamped> gps_vel;
   HardRealTimeDataBox<inertial_sense::GNSSEphemeris> eph_data_;
   HardRealTimeDataBox<inertial_sense::GlonassEphemeris> eph2_data_;
   HardRealTimeDataBox<nav_msgs::Odometry> odom_data_;
   HardRealTimeDataBox<geometry_msgs::Point> ins1_data_;
   HardRealTimeDataBox<inertial_sense::PreIntIMU> preintIMU_data_;
+  bool avaliablePreintIMU_RT;
+
   HardRealTimeDataBox<inertial_sense::GPSInfo> gps_info_data_;
   HardRealTimeDataBox<std_msgs::Header> strobe_time_data_;
   HardRealTimeDataBox<sensor_msgs::MagneticField> mag_data_;

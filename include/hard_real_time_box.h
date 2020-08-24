@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <thread>
+#include <pthread.h>
 
 template <typename T>
 class HardRealTimeDataBox
@@ -20,6 +21,7 @@ public:
     /*Returns true if databox data was successfully updated*/
     bool writeFromRT(const T &value)
     {
+        data_ = value;
         if (pthread_mutex_trylock(&mutex_) == 0)
         {
             lastRTWriteData_ = value;
@@ -34,17 +36,20 @@ public:
         }
     }
 
+    void updateFromNonRT()
+    {
+        pthread_mutex_lock(&mutex_);
+        dirty_ = false;
+        lastData_ = lastRTWriteData_;
+        pthread_mutex_unlock(&mutex_);
+    }
+        
     /*Returns true if some new data was available*/
     bool readFromNonRealTime(T &outvalue)
     {
         if (dirty_)
         {
-            {
-                pthread_mutex_lock(&mutex_);
-                dirty_ = false;
-                lastData_ = lastRTWriteData_;
-                pthread_mutex_unlock(&mutex_);
-            }
+            updateFromNonRT();
             outvalue = lastData_;
             return true;
         }
@@ -61,12 +66,20 @@ public:
        return lastData_; 
     }
 
+    inline T& readFromRT()
+    {
+        return data_;
+    }
+
 private:
     // updated from non-realtime thread when on "readFromNonRealTime"
     T lastData_;
 
     // storage for realtime data, only updated from the RT-Thread
     T lastRTWriteData_;
+
+    // storage for realtime data, only updated from the RT-Thread
+    T data_;
 
     // this variable balance the reads/writes, 
     // only locking if a new RT value is available

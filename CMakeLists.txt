@@ -68,4 +68,4 @@ target_link_libraries(inertial_sense_node inertial_sense_ros ${catkin_LIBRARIES}
 
 # RT_INERTIAL_SENSE_NODE
 add_executable(rt_inertial_sense_node src/rt_inertial_sense_node.cpp)
-target_link_libraries(rt_inertial_sense_node inertial_sense_ros ${catkin_LIBRARIES})
+target_link_libraries(rt_inertial_sense_node inertial_sense_ros ${catkin_LIBRARIES} pthread)
