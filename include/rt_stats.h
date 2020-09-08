@@ -40,7 +40,12 @@ struct RTStatistics
     const int TIMES = 30000; // 1 shot per minute
     const int SIGMA = 20;
 
-    const int DEADLINE_us = 10000; // 1 shot per minute
+    const int DEADLINE_us; // 1 shot per minute
+
+    RTStatistics(int deadline_us = 10000, int LOG_UPDATE_COUNTER = 30000)
+        : DEADLINE_us(deadline_us), TIMES(LOG_UPDATE_COUNTER)
+    {
+    }
 
     struct StatsData
     {
@@ -93,7 +98,7 @@ struct RTStatistics
 
     void update()
     {
-        if(i > TIMES * 0.1) /*ignore stabilized startup*/
+        if (i > TIMES * 0.1) /*ignore stabilized startup*/
             initializating = false;
 
         if (countperiod && !initializating)
@@ -120,8 +125,6 @@ struct RTStatistics
 
         i++;
         second = first;
-
-        
 
         // updated only once each x iterations
         if (i % TIMES == 0)

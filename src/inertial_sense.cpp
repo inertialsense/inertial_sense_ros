@@ -326,8 +326,6 @@ void InertialSenseROS::rtUpdate()
 {
   //if (pthread_mutex_trylock(&IS_mutex_) == 0)
   {
-    avaliableGPS_RT=false;
-    avaliablePreintIMU_RT = false;
     IS_.Update();
     //pthread_mutex_unlock(&IS_mutex_);
   }
@@ -477,7 +475,6 @@ void InertialSenseROS::GPS_pos_callback(const gps_pos_t *const msg)
     gps_msg.pDop = msg->pDop;
 
     this->gps.writeFromRT(gps_msg);
-    avaliableGPS_RT = true;
   }
 }
 
@@ -542,7 +539,8 @@ void InertialSenseROS::baro_callback(const barometer_t *const msg)
   baro_msg.fluid_pressure = msg->bar;
   baro_msg.variance = msg->barTemp;
 
-  baro_.pub.publish(baro_msg);
+  //baro_.pub.publish(baro_msg);
+  baro_data_.writeFromRT(baro_msg);
 }
 
 // RT-Thread
@@ -561,7 +559,6 @@ void InertialSenseROS::preint_IMU_callback(const preintegrated_imu_t *const msg)
 
   preintIMU_msg.dt = msg->dt;
   this->preintIMU_data_.writeFromRT(preintIMU_msg);
-  avaliablePreintIMU_RT=true;
 }
 
 // RT-Thread
@@ -1184,5 +1181,11 @@ void InertialSenseROS::nonRTUpdate()
   if (mag_data_.readFromNonRealTime(mag_msg))
   {
     mag_.pub.publish(mag_msg);
+  }
+
+  sensor_msgs::FluidPressure baro_msg;
+  if(baro_data_.readFromNonRealTime(baro_msg))
+  {
+    baro_.pub.publish(baro_msg);
   }
 }

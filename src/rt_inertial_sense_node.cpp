@@ -30,6 +30,7 @@ static void do_rt_task();
 static void alignToFrameStart();
 static void *main_rt_loop(void *data);
 int create_realtime_thread();
+void main_non_rt_loop();
 
 const double DESIRED_RT_LOOP_TIME = 2000000; // 2ms
 const double NON_RT_LOOP_FREQ = 500;
@@ -37,32 +38,59 @@ const double NON_RT_LOOP_FREQ = 500;
 int main(int argc, char *argv[])
 {
         ros::init(argc, argv, "inertial_sense_node");
-        
+
         thing = std::make_shared<InertialSenseROS>();
+        thing->IS_.SetLoggerEnabled(false);
         rtstats.init();
 
         int ret = create_realtime_thread();
 
         if (ret == 0)
         {
-                //pthread_join(rtThread, NULL);
-                ROS_INFO("[inertial_sense_node] Starting ros loop");
-                {
-                        ros::Rate r(NON_RT_LOOP_FREQ);
-                        while (ros::ok())
-                        {
-                                ros::spinOnce();
-                                thing->nonRTUpdate();
-                                rtstats.tryPrint();
-                                r.sleep();
-                        }
-
-                        rtexit = true; // exits rt thread
-                        ROS_INFO("[inertial_sense_node] Exiting application");
-                }
+                main_non_rt_loop();
         }
 
         return ret;
+}
+
+void main_non_rt_loop()
+{
+
+        //pthread_join(rtThread, NULL);
+        ROS_INFO("[inertial_sense_node] Starting ros loop");
+        {
+                ros::Rate r(NON_RT_LOOP_FREQ);
+                while (ros::ok())
+                {
+                        ros::spinOnce();
+                        thing->nonRTUpdate();
+                        rtstats.tryPrint();
+                        r.sleep();
+                }
+
+                rtexit = true; // exits rt thread
+                ROS_INFO("[inertial_sense_node] Exiting application");
+        }
+}
+
+void *main_rt_loop(void *data)
+{
+        ROS_INFO("[inertial_sense_node] RT THREAD");
+        struct period_info pinfo;
+        pinfo.period_ns = DESIRED_RT_LOOP_TIME; // us
+
+        periodic_task_init(&pinfo);
+
+        ROS_INFO("[inertial_sense_node] rtstats post sinit");
+        while (!rtexit)
+        {
+                rtstats.preupdate();
+                thing->rtUpdate();
+                wait_rest_of_period(&pinfo);
+                rtstats.update();
+        }
+
+        return NULL;
 }
 
 int create_realtime_thread()
@@ -90,7 +118,7 @@ int create_realtime_thread()
         }
 
         /* Set a specific stack size  */
-        ret = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+        ret = pthread_attr_setstacksize(&attr, 100 * PTHREAD_STACK_MIN);
         if (ret)
         {
                 printf("pthread setstacksize failed\n");
@@ -161,24 +189,4 @@ static void wait_rest_of_period(struct period_info *pinfo)
 
         /* for simplicity, ignoring possibilities of signal wakes */
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &pinfo->next_period, NULL);
-}
-
-void *main_rt_loop(void *data)
-{
-        ROS_INFO("[inertial_sense_node] RT THREAD");
-        struct period_info pinfo;
-        pinfo.period_ns = DESIRED_RT_LOOP_TIME; // us
-
-        periodic_task_init(&pinfo);
-
-        ROS_INFO("[inertial_sense_node] rtstats post sinit");
-        while (!rtexit)
-        {
-                rtstats.preupdate();
-                thing->rtUpdate();
-                wait_rest_of_period(&pinfo);
-                rtstats.update();
-        }
-
-        return NULL;
 }
