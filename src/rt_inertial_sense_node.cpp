@@ -32,7 +32,7 @@ static void *main_rt_loop(void *data);
 int create_realtime_thread();
 void main_non_rt_loop();
 
-const double DESIRED_RT_LOOP_TIME = 2000000; // 2ms
+const double DESIRED_RT_LOOP_TIME_NS = 2000000; // 2ms
 const double NON_RT_LOOP_FREQ = 500;
 
 int main(int argc, char *argv[])
@@ -77,7 +77,7 @@ void *main_rt_loop(void *data)
 {
         ROS_INFO("[inertial_sense_node] RT THREAD");
         struct period_info pinfo;
-        pinfo.period_ns = DESIRED_RT_LOOP_TIME; // us
+        pinfo.period_ns = DESIRED_RT_LOOP_TIME_NS; // us
 
         periodic_task_init(&pinfo);
 
@@ -179,7 +179,7 @@ static void inc_period(struct period_info *pinfo)
 static void periodic_task_init(struct period_info *pinfo)
 {
         /* for simplicity, hardcoding a 1ms period */
-        pinfo->period_ns = DESIRED_RT_LOOP_TIME;
+        pinfo->period_ns = DESIRED_RT_LOOP_TIME_NS;
 
         clock_gettime(CLOCK_MONOTONIC, &(pinfo->next_period));
 }
