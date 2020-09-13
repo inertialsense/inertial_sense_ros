@@ -1,5 +1,5 @@
 <package format="2">
-  <name>inertial_sense</name>
+  <name>inertial_sense_ros</name>
   <version>1.1.1</version>
   <description>
   This package provides a ROS interface to the InertialSense GPS-INS sensor
