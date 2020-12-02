@@ -11,6 +11,7 @@
 #include "ros/ros.h"
 #include "ros/timer.h"
 #include "sensor_msgs/Imu.h"
+#include "sensor_msgs/NavSatFix.h"
 #include "sensor_msgs/MagneticField.h"
 #include "sensor_msgs/FluidPressure.h"
 #include "sensor_msgs/JointState.h"
@@ -214,6 +215,8 @@ public:
   sensor_msgs::Imu imu1_msg, imu2_msg;
   nav_msgs::Odometry odom_msg;
   inertial_sense::GPS gps_msg; 
+  sensor_msgs::Imu imu_msg;
+  sensor_msgs::NavSatFix navfix_msg;
   geometry_msgs::Vector3Stamped gps_velEcef;
   inertial_sense::GPSInfo gps_info_msg;
   inertial_sense::INL2States inl2_states_msg;
@@ -223,4 +226,6 @@ public:
 
   // Connection to the uINS
   InertialSense IS_;
+  ros::Publisher imu_pub;
+  ros::Publisher gnss_pub;
 };
