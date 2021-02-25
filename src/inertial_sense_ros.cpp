@@ -432,7 +432,7 @@ void InertialSenseROS::INS2_callback(const ins_2_t * const msg)
     tf::quaternionMsgToTF(odom_msg.pose.pose.orientation, q);
     transform.setRotation(q);
 
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "ins", "base_link_ins"));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "ins", "ins_base_link"));
   }
 
   if (INS_.enabled)
