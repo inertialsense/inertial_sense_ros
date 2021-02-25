@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <tf/tf.h>
 #include <ros/console.h>
+#include <ISPose.h>
 
 InertialSenseROS::InertialSenseROS() :
   nh_(), nh_private_("~"), initialized_(false)
@@ -373,18 +374,34 @@ void InertialSenseROS::INS2_callback(const ins_2_t * const msg)
   odom_msg.header.stamp = ros_time_from_week_and_tow(msg->week, msg->timeOfWeek);
   odom_msg.header.frame_id = frame_id_;
 
-  odom_msg.pose.pose.orientation.w = msg->qn2b[0];
   if (LTCF == NED)
   {
+    odom_msg.pose.pose.orientation.w = msg->qn2b[0];
     odom_msg.pose.pose.orientation.x = msg->qn2b[1];
     odom_msg.pose.pose.orientation.y = msg->qn2b[2];
     odom_msg.pose.pose.orientation.z = msg->qn2b[3];
   }
   else if (LTCF == ENU)
   {
-    odom_msg.pose.pose.orientation.x = msg->qn2b[2];
-    odom_msg.pose.pose.orientation.y = msg->qn2b[1];
-    odom_msg.pose.pose.orientation.z = -msg->qn2b[3];
+    // q_enu2b = q_enu2ned * q_n2b
+    // q_enu2ned = [0, 0.7, 0.7, 0], which is eul = [180, 0, 90]
+    // Let q_n2b = [0.7, 0, 0, 0.7], which is eul = [0, 0, 90], robot facing east
+    // Then q_enu2b = [0, 1, 0, 0], which is eul = [180, 0, 0], a 180 deg flip about x-axis that takes ENU frame to body
+    // Which means the following 3 lines are not always true.
+    //odom_msg.pose.pose.orientation.x = msg->qn2b[2];
+    //odom_msg.pose.pose.orientation.y = msg->qn2b[1];
+    //odom_msg.pose.pose.orientation.z = -msg->qn2b[3];
+    // This fixes it:
+
+    ixQuat q_enu2ned, q_enu2b;
+    ixEuler eul = {M_PI, 0, 0.5*M_PI};
+    euler2quat(eul, q_enu2ned);
+    mul_Quat_Quat(q_enu2b, msg->qn2b, q_enu2ned);
+
+    odom_msg.pose.pose.orientation.w = q_enu2b[0];
+    odom_msg.pose.pose.orientation.x = q_enu2b[1];
+    odom_msg.pose.pose.orientation.y = q_enu2b[2];
+    odom_msg.pose.pose.orientation.z = q_enu2b[3];
   }
 
   odom_msg.twist.twist.linear.x = msg->uvw[0];
@@ -410,7 +427,7 @@ void InertialSenseROS::INS2_callback(const ins_2_t * const msg)
   if (publishTf)
   {
     // Calculate the TF from the pose...
-		transform.setOrigin(tf::Vector3(odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.position.z));
+	transform.setOrigin(tf::Vector3(odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.position.z));
     tf::Quaternion q;
     tf::quaternionMsgToTF(odom_msg.pose.pose.orientation, q);
     transform.setRotation(q);
