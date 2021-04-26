@@ -509,7 +509,7 @@ void InertialSenseROS::GPS_pos_callback(const gps_pos_t * const msg)
 {
   GPS_week_ = msg->week;
   GPS_towOffset_ = msg->towOffset;
-  if (GPS_.enabled && msg->status&GPS_STATUS_FIX_MASK)
+  // if (GPS_.enabled && msg->status&GPS_STATUS_FIX_MASK) // Comment out so we can tell GPS is working.  Users need to check for fix.
   {
     gps_msg.header.stamp = ros_time_from_week_and_tow(msg->week, msg->timeOfWeekMs/1e3);
     gps_msg.fix_type = msg->status & GPS_STATUS_FIX_MASK;
