@@ -136,7 +136,8 @@ void InertialSenseROS::configure_data_streams()
 
 void InertialSenseROS::start_log()
 {
-  std::string filename = cISLogger::CreateCurrentTimestamp();
+  std::string filename = getenv("HOME");
+  filename += "/Documents/Inertial_Sense/Logs/" + cISLogger::CreateCurrentTimestamp();
   ROS_INFO_STREAM("Creating log in " << filename << " folder");
   IS_.SetLoggerEnabled(true, filename, cISLogger::LOGTYPE_DAT, RMC_PRESET_PPD_ROBOT);
 }
@@ -217,11 +218,15 @@ void InertialSenseROS::configure_rtk()
   nh_private_.param<bool>("RTK_rover_radio_enable", RTK_rover_radio_enable, false);
   nh_private_.param<bool>("RTK_base", RTK_base, false);
   nh_private_.param<bool>("dual_GNSS", dual_GNSS, false);
-  std::string RTK_server_IP, RTK_correction_protocol;
+  std::string RTK_server_IP, RTK_correction_protocol, RTK_server_mount, RTK_server_username, RTK_server_password;
   int RTK_server_port;
+  nh_private_.param<std::string>("RTK_correction_protocol", RTK_correction_protocol, "RTCM3");
   nh_private_.param<std::string>("RTK_server_IP", RTK_server_IP, "127.0.0.1");
   nh_private_.param<int>("RTK_server_port", RTK_server_port, 7777);
-  nh_private_.param<std::string>("RTK_correction_protocol", RTK_correction_protocol, "RTCM3");
+  nh_private_.param<std::string>("RTK_server_mount", RTK_server_mount, "");
+  nh_private_.param<std::string>("RTK_server_username", RTK_server_username, "");
+  nh_private_.param<std::string>("RTK_server_password", RTK_server_password, "");
+
   ROS_ERROR_COND(RTK_rover && RTK_base, "unable to configure uINS to be both RTK rover and base - default to rover");
   ROS_ERROR_COND(RTK_rover && dual_GNSS, "unable to configure uINS to be both RTK rover as dual GNSS - default to dual GNSS");
 
@@ -257,6 +262,11 @@ void InertialSenseROS::configure_rtk()
     RTK_base = false;
     // [type]:[protocol]:[ip/url]:[port]:[mountpoint]:[username]:[password]
     std::string RTK_connection =  "TCP:" + RTK_correction_protocol + ":" + RTK_server_IP + ":" + std::to_string(RTK_server_port);
+    if (!RTK_server_mount.empty() && !RTK_server_username.empty())
+    { // NTRIP options
+      RTK_connection += ":" + RTK_server_mount + ":" + RTK_server_username + ":" + RTK_server_password; 
+    }
+
     ROS_INFO("InertialSense: Configured as RTK Rover");
     RTK_state_ = RTK_ROVER;
     RTKCfgBits |= (gps_type=="F9P" ? RTK_CFG_BITS_ROVER_MODE_RTK_POSITIONING_EXTERNAL : RTK_CFG_BITS_ROVER_MODE_RTK_POSITIONING);
