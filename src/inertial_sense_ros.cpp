@@ -382,18 +382,6 @@ void InertialSenseROS::INS2_callback(const ins_2_t * const msg)
     return;
   }
 
-  /*
-  try
-  {
-    odom_msg.header.stamp = ros_time_from_week_and_tow(msg->week, msg->timeOfWeek);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    odom_msg.header.stamp = ros::Time::now();
-  }
-  */
-
   odom_msg.header.stamp = ros::Time::now();
   odom_msg.header.frame_id = frame_id_;
 
@@ -465,18 +453,6 @@ void InertialSenseROS::INS2_callback(const ins_2_t * const msg)
 
 void InertialSenseROS::INL2_states_callback(const inl2_states_t* const msg)
 {
-  /*
-  try
-  {
-    inl2_states_msg.header.stamp = ros_time_from_tow(msg->timeOfWeek);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    inl2_states_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
   inl2_states_msg.header.stamp = ros::Time::now();
   inl2_states_msg.header.frame_id = frame_id_;
 
@@ -515,18 +491,6 @@ void InertialSenseROS::INL2_states_callback(const inl2_states_t* const msg)
 
 void InertialSenseROS::IMU_callback(const dual_imu_t* const msg)
 {
-  /*
-  try
-  {
-    imu1_msg.header.stamp = imu2_msg.header.stamp = ros_time_from_start_time(msg->time);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    imu1_msg.header.stamp = imu2_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
   imu1_msg.header.stamp = imu2_msg.header.stamp = ros::Time::now();
   imu1_msg.header.frame_id = imu2_msg.header.frame_id = frame_id_;
 
@@ -558,18 +522,6 @@ void InertialSenseROS::GPS_pos_callback(const gps_pos_t * const msg)
   GPS_towOffset_ = msg->towOffset;
   if (GPS_.enabled && msg->status&GPS_STATUS_FIX_MASK)
   {
-    /*
-    try
-    {
-      gps_msg.header.stamp = ros_time_from_week_and_tow(msg->week, msg->timeOfWeekMs/1.0e3);
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-      gps_msg.header.stamp = ros::Time::now();
-    }
-    */
-    
     gps_msg.header.stamp = ros::Time::now();
     gps_msg.week = msg->week;
     gps_msg.fix_type = msg->status & GPS_STATUS_FIX_MASK;
@@ -594,18 +546,6 @@ void InertialSenseROS::GPS_vel_callback(const gps_vel_t * const msg)
 {
 	if (GPS_.enabled && abs(GPS_towOffset_) > 0.001)
 	{
-    /*
-		try
-		{
-			gps_velEcef.header.stamp = ros_time_from_week_and_tow(GPS_week_, msg->timeOfWeekMs/1.0e3);
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << e.what() << '\n';
-			gps_velEcef.header.stamp = ros::Time::now();
-		}
-    */
-
     gps_velEcef.header.stamp = ros::Time::now();
 		gps_velEcef.vector.x = msg->vel[0];
 		gps_velEcef.vector.y = msg->vel[1];
@@ -638,19 +578,6 @@ void InertialSenseROS::strobe_in_time_callback(const strobe_in_time_t * const ms
   if (abs(GPS_towOffset_) > 0.001)
   {
     std_msgs::Header strobe_msg;
-
-    /*
-    try
-    {
-      strobe_msg.stamp = ros_time_from_week_and_tow(msg->week, msg->timeOfWeekMs * 1.0e-3);
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-      strobe_msg.stamp = ros::Time::now();
-    }
-    */
-    
     strobe_msg.stamp = ros::Time::now();
     strobe_pub_.publish(strobe_msg);
   }
@@ -664,18 +591,6 @@ void InertialSenseROS::GPS_info_callback(const gps_sat_t* const msg)
     return;
   }
 
-  /*
-  try
-  {
-    gps_info_msg.header.stamp =ros_time_from_tow(msg->timeOfWeekMs/1.0e3);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    gps_info_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
   gps_info_msg.header.stamp = ros::Time::now();
   gps_info_msg.header.frame_id = frame_id_;
   gps_info_msg.num_sats = msg->numSats;
@@ -691,19 +606,7 @@ void InertialSenseROS::GPS_info_callback(const gps_sat_t* const msg)
 void InertialSenseROS::mag_callback(const magnetometer_t* const msg)
 {
   sensor_msgs::MagneticField mag_msg;
-  
-  /*
-  try
-  {
-    mag_msg.header.stamp = ros_time_from_start_time(msg->time);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    mag_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
+
   mag_msg.header.stamp = ros::Time::now();
   mag_msg.header.frame_id = frame_id_;
   mag_msg.magnetic_field.x = msg->mag[0];
@@ -717,18 +620,6 @@ void InertialSenseROS::baro_callback(const barometer_t * const msg)
 {
   sensor_msgs::FluidPressure baro_msg;
 
-  /*
-  try
-  {
-    baro_msg.header.stamp = ros_time_from_start_time(msg->time);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    baro_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
   baro_msg.header.stamp = ros::Time::now();
   baro_msg.header.frame_id = frame_id_;
   baro_msg.fluid_pressure = msg->bar;
@@ -741,18 +632,6 @@ void InertialSenseROS::preint_IMU_callback(const preintegrated_imu_t * const msg
 {
   inertial_sense_ros::PreIntIMU preintIMU_msg;
 
-  /*
-  try
-  {
-    preintIMU_msg.header.stamp = ros_time_from_start_time(msg->time);
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << e.what() << '\n';
-    preintIMU_msg.header.stamp = ros::Time::now();
-  }
-  */
-  
   preintIMU_msg.header.stamp = ros::Time::now();
   preintIMU_msg.header.frame_id = frame_id_;
   preintIMU_msg.dtheta.x = msg->theta1[0];
@@ -774,18 +653,6 @@ void InertialSenseROS::RTK_Misc_callback(const gps_rtk_misc_t* const msg)
   {
     inertial_sense_ros::RTKInfo rtk_info;
 
-    /*
-    try
-    {
-      rtk_info.header.stamp = ros_time_from_week_and_tow(GPS_week_, msg->timeOfWeekMs/1000.0);
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-      rtk_info.header.stamp = ros::Time::now();
-    }
-    */
-    
     rtk_info.header.stamp = ros::Time::now();
 
     rtk_info.baseAntcount = msg->baseAntennaCount;
@@ -812,18 +679,6 @@ void InertialSenseROS::RTK_Rel_callback(const gps_rtk_rel_t* const msg)
   if (RTK_.enabled && abs(GPS_towOffset_) > 0.001)
   {
     inertial_sense_ros::RTKRel rtk_rel;
-
-    /*
-    try
-    {
-      rtk_rel.header.stamp = ros_time_from_week_and_tow(GPS_week_, msg->timeOfWeekMs/1000.0);
-    }
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << '\n';
-      rtk_rel.header.stamp = ros::Time::now();
-    }
-    */
 
     rtk_rel.header.stamp = ros::Time::now();
     
@@ -875,18 +730,6 @@ void InertialSenseROS::GPS_obs_callback(const obsd_t * const msg, int nObs)
   {
       inertial_sense_ros::GNSSObservation obs;
 
-      /*
-			try
-			{
-	      obs.header.stamp = ros_time_from_gtime(msg[i].time.time, msg[i].time.sec);
-			}
-			catch(const std::exception& e)
-			{
-				std::cerr << e.what() << '\n';
-	      obs.header.stamp = ros::Time::now();
-			}
-      */
-			
       obs.header.stamp = ros::Time::now();
 
       obs.time.time = msg[i].time.time;
